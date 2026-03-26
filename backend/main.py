@@ -1,3 +1,19 @@
+"""
+Maveric MiniPilot — FastAPI Backend
+====================================
+REST API that orchestrates the RAG pipeline and conversation management.
+
+Endpoints:
+    GET  /health    — liveness check
+    POST /chat      — main chat endpoint
+    POST /clear     — delete a session
+    GET  /sessions  — list all sessions
+
+Dependencies:
+    - Groq API      : LLM answer generation
+    - PostgreSQL    : conversation persistence
+    - RAG engine    : document retrieval
+"""
 import os
 import sys
 from pathlib import Path
@@ -99,6 +115,29 @@ def health(db: Session = Depends(get_db)):
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest, db: Session = Depends(get_db)):
+    """
+    Main chat endpoint — full RAG + LLM pipeline.
+
+    Pipeline:
+        1. Optionally prefix query with module context
+        2. Retrieve top-4 chunks from pgvector
+        3. Load conversation history from PostgreSQL
+        4. Assemble prompt: system + context + history + question
+        5. Call Groq LLaMA3 for answer
+        6. Save message pair to PostgreSQL
+        7. Return answer + source file paths
+
+    Args:
+        req: ChatRequest with message, session_id, optional module_focus
+        db:  injected PostgreSQL session
+
+    Returns:
+        ChatResponse with answer, session_id, and source file list
+
+    Raises:
+        400: empty message
+        500: RAG retrieval or Groq API failure
+    """
     if not req.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
