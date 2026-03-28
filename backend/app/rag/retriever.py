@@ -88,3 +88,4 @@ def retrieve(
     # Re-rank by score and return top k
     chunks.sort(key=lambda x: x["score"], reverse=True)
     return chunks[:k]
+    print(f"[RAG] Query: {query} | Threshold: {threshold} | Results: {len(chunks)}")
