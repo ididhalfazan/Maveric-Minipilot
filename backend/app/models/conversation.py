@@ -29,5 +29,5 @@ class ChatMessage(Base):
                         nullable=False)
     role       = Column(String(20), nullable=False)
     content    = Column(Text, nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now(), index=True)
     session    = relationship("ChatSession", back_populates="messages")
